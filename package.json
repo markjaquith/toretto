@@ -10,6 +10,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test": "npm run test:spacemouse",
+    "test:spacemouse": "node --test spaceMouse.test.js spaceMouseDriver.test.js spaceMouseTransport.test.js",
+    "test:spacemouse:browser": "node --test spaceMouse.browser.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

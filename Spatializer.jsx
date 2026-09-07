@@ -3,6 +3,7 @@ import { flushSync } from "react-dom";
 import { exportTransparentPng, measureProjectedSceneBounds, renderPngPreview } from "./exportFrame";
 import { animationExportCapabilities, createAnimationExport, finishAnimationExport, uploadAnimationFrame } from "./exportAnimation";
 import { ExportDialog } from "./ExportDialog";
+import { useSpaceMouse } from "./useSpaceMouse";
 import torettoMarkUrl from "./toretto-mark.svg";
 
 const APP_WIDTH = 1440;
@@ -539,7 +540,7 @@ function CurveEditor({ curve, onChange, onPreset, onClose }) {
   </div>;
 }
 
-export function Spatializer({ children, contentKey, onOpenSource }) {
+export function Spatializer({ children, contentKey, sourceOpen = false, onOpenSource }) {
   const rootRef = useRef(null);
   const cameraRef = useRef(null);
   const specimenRef = useRef(null);
@@ -620,6 +621,19 @@ export function Spatializer({ children, contentKey, onOpenSource }) {
     framingOperationRef.current += 1;
     setIsFraming(false);
   }, []);
+
+  const spaceMouse = useSpaceMouse({
+    viewportRef: cameraRef,
+    enabled: !sourceOpen && !exportOpen && !isExporting && !isPreviewingExport && !isPlaying,
+    isInputBlocked: () => isRenderingAnimationRef.current || dragRef.current || gizmoDragRef.current || rangeDragRef.current,
+    cameraState: { orientation, pan, zoom, fitScale },
+    onCameraChange: (update) => {
+      cancelFraming();
+      if (update.pan) { panRef.current = update.pan; setPan(update.pan); }
+      if (update.zoom !== undefined) { zoomRef.current = update.zoom; setZoom(update.zoom); }
+      if (update.orientation) setOrientation(update.orientation);
+    },
+  });
 
   const applyExplosionPosition = useCallback((nextPosition, immediate = false) => {
     cancelFraming();
@@ -1831,7 +1845,11 @@ export function Spatializer({ children, contentKey, onOpenSource }) {
           </div>
           <button type="button" className={SOURCE_BUTTON} onClick={onOpenSource}>Open…</button>
           <button type="button" className={`${TOOLBAR_BUTTON} text-[#c7f4e2]`} onClick={() => void openExport()}>Export…</button>
+          <button type="button" className={`${TOOLBAR_BUTTON} ${spaceMouse.connected ? TOOLBAR_ACTIVE : ""}`} aria-pressed={spaceMouse.connected} onClick={spaceMouse.toggle} title={spaceMouse.connecting ? "Cancel the pending driver connection" : "Connect through the running 3Dconnexion driver. No external scripts are loaded."}>
+            {spaceMouse.connecting ? "Cancel SpaceMouse" : "SpaceMouse"}
+          </button>
         </div>
+        {spaceMouse.status && <p role="status" className="max-w-64 text-[10px] text-[#9ca5a3]">{spaceMouse.status}</p>}
         <div className="spatializer-controls">
           <div className="spatializer-range spatializer-bipolar">
           <span>
@@ -1961,9 +1979,9 @@ export function Spatializer({ children, contentKey, onOpenSource }) {
           ))}
         </div>
         <div className="spatializer-actions flex flex-nowrap gap-1">
-          <button type="button" className={`${TOOLBAR_BUTTON} disabled:cursor-wait disabled:opacity-45`} disabled={isFraming} onClick={() => void centerView()}>Center</button>
-          <button type="button" className={`${TOOLBAR_BUTTON} disabled:cursor-wait disabled:opacity-45`} disabled={isFraming} onClick={() => void fitScene()}>Fit</button>
-          <button type="button" className={TOOLBAR_BUTTON} onClick={reset}>Reset</button>
+          <button type="button" className={`${TOOLBAR_BUTTON} disabled:cursor-wait disabled:opacity-45`} disabled={isFraming} onClick={() => { cameraRef.current?.focus({ preventScroll: true }); void centerView(); }}>Center</button>
+          <button type="button" className={`${TOOLBAR_BUTTON} disabled:cursor-wait disabled:opacity-45`} disabled={isFraming} onClick={() => { cameraRef.current?.focus({ preventScroll: true }); void fitScene(); }}>Fit</button>
+          <button type="button" className={TOOLBAR_BUTTON} onClick={() => { reset(); cameraRef.current?.focus({ preventScroll: true }); }}>Reset</button>
         </div>
         <div className="spatializer-panel-toggles">
           <button

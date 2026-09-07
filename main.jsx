@@ -21,7 +21,7 @@ function TorettoApp() {
   const [imported, setImported] = useState(null);
   return (
     <>
-      <Spatializer contentKey={imported} onOpenSource={() => setSourceOpen(true)}>
+      <Spatializer contentKey={imported} sourceOpen={sourceOpen} onOpenSource={() => setSourceOpen(true)}>
         {imported ? <ImportedDocument markup={imported.markup} label={imported.label} /> : <DemoSite />}
       </Spatializer>
       {sourceOpen && <SourceDialog onClose={() => setSourceOpen(false)} onDemo={() => setImported(null)} onLoad={(markup, label) => setImported({ markup, label })} />}
