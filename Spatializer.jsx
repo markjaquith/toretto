@@ -1469,6 +1469,7 @@ export function Spatializer({ children, contentKey, sourceOpen = false, onOpenSo
       normalize,
       grabOffset: grabbedThumb ? pointerOffset : 0,
     };
+    spaceMouse.syncFocus();
     event.currentTarget.setPointerCapture(event.pointerId);
     if (!grabbedThumb) updateRangeDrag(event);
   };
@@ -1477,6 +1478,7 @@ export function Spatializer({ children, contentKey, sourceOpen = false, onOpenSo
     const drag = rangeDragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
     rangeDragRef.current = null;
+    spaceMouse.syncFocus();
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
@@ -1492,6 +1494,7 @@ export function Spatializer({ children, contentKey, sourceOpen = false, onOpenSo
       y: event.clientY,
       button: event.button,
     };
+    spaceMouse.syncFocus();
     cameraRef.current?.setPointerCapture(event.pointerId);
   };
 
@@ -1534,6 +1537,7 @@ export function Spatializer({ children, contentKey, sourceOpen = false, onOpenSo
 
   const endDrag = (event) => {
     dragRef.current = null;
+    spaceMouse.syncFocus();
     if (cameraRef.current?.hasPointerCapture(event.pointerId)) cameraRef.current.releasePointerCapture(event.pointerId);
   };
 
@@ -1557,6 +1561,7 @@ export function Spatializer({ children, contentKey, sourceOpen = false, onOpenSo
       startAxis: axis ? rotateVector(orientation, AXIS_VECTORS[axis]) : null,
       rotationAxis: null,
     };
+    spaceMouse.syncFocus();
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
@@ -1621,6 +1626,7 @@ export function Spatializer({ children, contentKey, sourceOpen = false, onOpenSo
     event.stopPropagation();
     const drag = gizmoDragRef.current;
     gizmoDragRef.current = null;
+    spaceMouse.syncFocus();
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }

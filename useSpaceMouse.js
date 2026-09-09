@@ -56,5 +56,9 @@ export function useSpaceMouse({ viewportRef, enabled, isInputBlocked, cameraStat
     if (!failed) session.current = cleanup;
   }
 
-  return { ...connection, status: connection.message, toggle };
+  function syncFocus() {
+    session.current?.syncFocus();
+  }
+
+  return { ...connection, status: connection.message, toggle, syncFocus };
 }

@@ -344,3 +344,69 @@ test("pending discovery can be cancelled and retried without reviving late disco
     assert.deepEqual(unexpectedRequests, []);
   } finally { await browser.close(); }
 });
+
+test("drag completion and cancellation restore eligible SpaceMouse focus", async () => {
+  const browser = await puppeteer.launch({ channel: "chrome", headless: true });
+  try {
+    const { page } = await openPage(browser);
+    await page.setViewport({ width: 1440, height: 1000 });
+    await paint(page);
+    await click(page, "SpaceMouse");
+    await status(page, connectedStatus);
+    for (const selector of [".spatializer-camera", ".spatializer-gizmo-center", '[aria-label="Canvas zoom"]']) {
+      for (const cancel of [false, true]) {
+        const label = `${selector} ${cancel ? "cancel" : "release"}`;
+        await page.$eval(".spatializer-camera", element => element.focus());
+        const target = await page.$(selector);
+        const bounds = await target.boundingBox();
+        assert.ok(bounds, `${label}: drag target is visible`);
+        await target.evaluate(element => {
+          element.addEventListener("pointerdown", event => { window.dragPointerId = event.pointerId; }, { once: true });
+        });
+        await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+        await page.mouse.down();
+        await page.evaluate(() => window.spaceMouseTest.server.sendUpdate("motion", true));
+        await paint(page);
+        assert.equal(await page.evaluate(() => window.spaceMouseTest.server.focused), false, `${label}: blocked during drag`);
+        const before = await page.$eval(".spatializer-stage", element => element.style.transform);
+        await page.evaluate(async () => {
+          const server = window.spaceMouseTest.server;
+          const matrix = await server.sendRead("view.affine");
+          matrix[12] += 40;
+          await server.sendUpdate("view.affine", matrix);
+        });
+        await paint(page);
+        assert.equal(await page.$eval(".spatializer-stage", element => element.style.transform), before, `${label}: camera write blocked`);
+        const range = selector.includes("Canvas zoom");
+        if (cancel) {
+          await target.evaluate(element => element.dispatchEvent(new PointerEvent("pointercancel", {
+            bubbles: true, pointerId: window.dragPointerId,
+          })));
+          await paint(page);
+          assert.equal(await page.evaluate(() => window.spaceMouseTest.server.focused), !range, `${label}: cancellation restores eligible focus before pointerup`);
+        }
+        await page.mouse.up();
+        await paint(page);
+        assert.equal(await page.evaluate(() => window.spaceMouseTest.server.focused), !range, `${label}: driver focus follows eligible canvas`);
+        if (range) {
+          assert.equal(await target.evaluate(element => document.activeElement === element), true, `${label}: range retains keyboard focus`);
+          await page.$eval(".spatializer-camera", element => element.focus());
+        }
+        await page.evaluate(async () => {
+          const server = window.spaceMouseTest.server;
+          if (!server.focused) throw new Error("Driver is still unfocused");
+          await server.sendUpdate("motion", true);
+          const matrix = await server.sendRead("view.affine");
+          matrix[12] += 40;
+          await server.sendUpdate("transaction", 1);
+          await server.sendUpdate("view.affine", matrix);
+          await server.sendUpdate("transaction", 0);
+          await server.sendUpdate("motion", false);
+        });
+        await page.waitForFunction(previous => document.querySelector(".spatializer-stage").style.transform !== previous, {}, before);
+        await target.dispose();
+      }
+    }
+    assert.deepEqual(await page.evaluate(() => [window.spaceMouseTest.discoveries.length, window.spaceMouseTest.sockets.length]), [1, 1]);
+  } finally { await browser.close(); }
+});
