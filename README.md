@@ -41,6 +41,8 @@ The local client implements only the protocol subset needed by Toretto; it is no
 
 `npm test` is currently an alias for `npm run test:spacemouse`, and its output names that suite explicitly. It is **not an application-wide test suite**. The browser suite replaces discovery and driver WebSocket traffic with fakes and blocks unexpected off-origin HTTP requests. Set `TORETTO_TEST_URL` to use a different local app server.
 
+GitHub Actions runs both SpaceMouse suites and the production build on Ubuntu 24.04 with Node 24 and the runner's installed Google Chrome. The browser-test step starts a local app server and stops it when the step exits. These checks do not establish physical hardware compatibility.
+
 Imports, general camera behavior, timelines, and exports do not yet have dedicated automated coverage. Passing these SpaceMouse suites or `npm run build` does not establish coverage of those features. Physical cap feel and compatibility with other driver versions still require separate hardware testing.
 
 ## Runtime direction

@@ -18,7 +18,7 @@
   "dependencies": {
     "html-to-image": "^1.11.13",
     "pdfjs-dist": "^6.3.289",
-    "puppeteer-core": "^25.9.0",
+    "puppeteer-core": "^25.16.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -26,6 +26,6 @@
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.0",
     "tailwindcss": "^4.3.3",
-    "vite": "^8.2.2"
+    "vite": "^8.3.5"
   }
 }
