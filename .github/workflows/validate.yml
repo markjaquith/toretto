@@ -18,4 +18,5 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci
+      - run: npm run test:spacemouse
       - run: npm run build
